@@ -1,4 +1,4 @@
-Latent Template Induction with Gumbel-CRFs. NeurIPS 2020. ([pdf](https://github.com/FranxYao/Gumbel-CRF/blob/main/src/gumbel_crf_camera_ready.pdf))
+Latent Template Induction with Gumbel-CRFs. NeurIPS 2020. ([pdf](https://github.com/FranxYao/Gumbel-CRF/blob/main/doc/gumbel_crf_camera_ready.pdf))
 
 ## Implementation 
 * Gumbel-FFBS: `src/modeling/structure/linear_crf.py` line 195
