@@ -1,0 +1,6 @@
+.DS_Store
+.vscode
+.ipynb_checkpoints
+log
+src/.mypy_cache
+src/.vscode

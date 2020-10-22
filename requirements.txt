@@ -1,0 +1,4 @@
+py-rouge
+tensorboardX
+tqdm
+nltk
