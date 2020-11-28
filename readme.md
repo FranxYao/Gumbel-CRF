@@ -14,7 +14,7 @@ Yao Fu, Chuanqi Tan, Bin Bi, Mosha Chen, Yansong Feng, Alexander Rush. Latent Te
 
 ## Experiments
 
-### Text modeling
+### Text modeling, Table 1 in the paper 
 
 The following experiments are for reproducing Table 1 and Figure 3(B) in the paper. 
 
@@ -36,9 +36,8 @@ nohup python main.py --model_name=latent_temp_crf_ar --grad_estimator=score_func
 nohup python main.py --model_name=latent_temp_crf_ar --dataset=e2e --task=density --model_version=1.5.0.0 --gpu_id=5 --latent_vocab_size=20 --z_beta=1e-3 --z_sample_method=pm --z_overlap_logits=False --use_copy=False --use_src_info=False --num_epoch=60 --validate_start_epoch=0 --num_sample_nll=100 --tau_anneal_epoch=60 --x_lambd_start_epoch=10 --x_lambd_anneal_epoch=2 --batch_size_train=100 --inspect_grad=False --inspect_model=True  > ../log/latent_temp_crf_ar.1.5.0.0  2>&1 & tail -f ../log/latent_temp_crf_ar.1.5.0.0
 ```
 
-### Paraphrase Generation
+### Paraphrase Generation, Table 3 in the paper 
 
-For reproducing Table 3 in the paper 
 
 #### Paraphrase Generation, Gumbel-CRF
 ```bash
@@ -49,9 +48,8 @@ nohup python main.py --model_name=latent_temp_crf_ar --dataset=mscoco --task=gen
 ```bash
 nohup python main.py --model_name=latent_temp_crf_ar --grad_estimator=score_func --dataset=mscoco --task=generation --model_version=2.5.0.0 --gpu_id=4 --latent_vocab_size=50 --z_beta=1.05 --z_gamma=0 --z_b0=0.1 --use_copy=True --use_src_info=True --num_epoch=40 --validate_start_epoch=0 --batch_size_train=100 --num_sample_nll=100 --x_lambd_start_epoch=10 --x_lambd_anneal_epoch=2 --validation_criteria=b4 --test_validate=true > ../log/latent_temp_crf_ar.2.5.0.0  2>&1 & tail -f ../log/latent_temp_crf_ar.2.5.0.0
 ```
-### Data-to-text
+### Data-to-text, Table 2 in the paper
 
-For reproducing Table 2 in the paper
 
 #### Data-to-text, Gumbel-CRF
 ```bash

@@ -314,29 +314,38 @@ class LinearChainCRF(nn.Module):
       sample: size=[batch, max_len]
       relaxed_sample: size=[batch, max_len, num_class]
     """
+    # Algo 2 line 1
     all_scores = self.calculate_all_scores(emission_scores)
-    alpha, log_Z = self.forward_score(emission_scores, seq_lens)
+    alpha, log_Z = self.forward_score(emission_scores, seq_lens) 
 
     batch_size = emission_scores.size(0)
     max_len = emission_scores.size(1)
     num_class = emission_scores.size(2)
     device = emission_scores.device
 
-    # backward sampling, reverse the sequence
+    # Backward sampling start
+    # The sampling still goes backward, but for simple implementation we
+    # reverse the sequence, so in the code it still goes from 1 to T 
     relaxed_sample_rev = torch.zeros(batch_size, max_len, num_class).to(device)
     sample_prob = torch.zeros(batch_size, max_len).to(device)
     sample_rev = torch.zeros(batch_size, max_len).type(torch.long).to(device)
     alpha_rev = tmu.reverse_sequence(alpha, seq_lens).to(device)
     all_scores_rev = tmu.reverse_sequence(all_scores, seq_lens).to(device)
     
+    # Algo 2 line 3, log space
     # w.shape=[batch, num_class]
     w = alpha_rev[:, 0, :].clone()
     w -= log_Z.view(batch_size, -1)
     p = w.exp()
-    if(return_switching):
+    # switching regularization for longer chunk, not mentioned in the paper
+    # so do no need to care. In the future this will be updated with posterior
+    # regularization
+    if(return_switching): 
       switching = 0.
     
+    # Algo 2 line 4
     relaxed_sample_rev[:, 0] = tmu.reparameterize_gumbel(w, tau)
+    # Algo 2 line 5
     sample_rev[:, 0] = relaxed_sample_rev[:, 0].argmax(dim=-1)
     sample_prob[:, 0] = tmu.batch_index_select(p, sample_rev[:, 0]).flatten()
     mask = tmu.length_to_mask(seq_lens, max_len).type(torch.float)
@@ -348,16 +357,19 @@ class LinearChainCRF(nn.Module):
       # w.size=[batch, num_class]
       w = tmu.batch_index_select(y_after_to_current, sample_rev[:, i-1])
       w_base = tmu.batch_index_select(alpha_rev[:, i-1], sample_rev[:, i-1])
+      # Algo 2 line 7, log space
       w = w + alpha_rev[:, i] - w_base.view(batch_size, 1)
-      p = F.softmax(w, dim=-1)
+      p = F.softmax(w, dim=-1) # p correspond to pi in the paper
       if(return_switching):
         switching += (tmu.js_divergence(p, prev_p) * mask[:, i]).sum()
       prev_p = p
-      
+      # Algo 2 line 8
       relaxed_sample_rev[:, i] = tmu.reparameterize_gumbel(w, tau)
+      # Algo 2 line 9
       sample_rev[:, i] = relaxed_sample_rev[:, i].argmax(dim=-1)
       sample_prob[:, i] = tmu.batch_index_select(p, sample_rev[:, i]).flatten()
 
+    # Reverse the sequence back
     sample = tmu.reverse_sequence(sample_rev, seq_lens)
     relaxed_sample = tmu.reverse_sequence(relaxed_sample_rev, seq_lens)
     sample_prob = tmu.reverse_sequence(sample_prob, seq_lens)
