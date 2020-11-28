@@ -27,7 +27,7 @@ nohup python main.py --model_name=latent_temp_crf_ar --dataset=e2e --task=densit
 Parameters explained:
 * `gpu_id`: change it to any index. I was using a 8-gpu so the range is 0-7
 * `latent_vocab_size`: number of latent states. In Sam's and Lisa's paper they all use 50 but I find 20 suffice. Maybe bacause I have anonymized the entity. 
-* `z_beta`: beta parameter to controll entropy regularization. **The convergence of the latent is quite sensitive to this parameter**. If two low then constant posterior (always single state), if too high then uniform posterior. All the two are collapsed cases. I did not use any annealing since I always find posterior collapse can be addressed by a carefully tuned beta. 
+* `z_beta`: beta parameter to controll entropy regularization. **The convergence of the latent is quite sensitive to this parameter**. If two low then constant posterior (always single state), if too high then uniform posterior. All the two are collapsed cases. I did not use any annealing since I always find posterior collapse can be addressed by a carefully tuned beta. See [beta-VAE](https://openreview.net/forum?id=Sy2fzU9gl) for more details. 
 * `use_copy`: if the decoder copy from the table. Should not be used for density estimation. 
 * `use_src_info`: if feed table embeddings to decoder. Should not be used for density estimation.
 * `num_epoch`: convergence end at approximately 60-80. Did not use any learning rate warmup, annealing, or early stop (I tend to not use early stop)
@@ -52,6 +52,10 @@ Additionally, the controller also output the gradient of each part of the model 
 ```bash
 nohup python main.py --model_name=latent_temp_crf_ar --grad_estimator=score_func --dataset=e2e --task=density --model_version=2.0.0.1 --gpu_id=2 --latent_vocab_size=20 --z_beta=1.05 --z_gamma=0 --z_b0=0.1 --z_overlap_logits=False --use_copy=False --use_src_info=False --num_epoch=60 --validate_start_epoch=0 --batch_size_train=100 --num_sample_nll=100 --x_lambd_start_epoch=10 --x_lambd_anneal_epoch=2 > ../log/latent_temp_crf_ar.2.0.0.1  2>&1 & tail -f ../log/latent_temp_crf_ar.2.0.0.1
 ```
+
+Parameters explained:
+* `z_b0`: the constant baseline. Although there are many papers discussing what different baselines for variance reduction, this simplest baseline is ironically effective in the most cases. So a suggested practice is also use a constant baseline. It also serves as a scaling factor of the reward to make the gradient numerically centered at a desired scale (otherwise some baselines would reduce the scale of the reward close to 0)
+* `z_beta`: the beta parameter, still important in this estimator.  
 
 #### Text Modeling, PM-MRF
 
