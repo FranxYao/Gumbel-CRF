@@ -6,11 +6,11 @@ Yao Fu, Chuanqi Tan, Bin Bi, Mosha Chen, Yansong Feng, Alexander Rush. Latent Te
 * Gumbel-FFBS (Algorithm 2 in the paper): `src/modeling/structure/linear_crf.py` function `rsample`.
 * Core model (Figure 2 in the paper): `src/modeling/latent_temp_crf_ar.py`
 * Training, validation, evaluation: `src/controller.py`
-  * This file also serves as a general-purpose framework. New models can be added with minimum engineering. See `src/rnnlm.py` for an example
+  * This file also serves as a general-purpose framework. New models can be added with minimum engineering. See `src/modeling/rnnlm.py` for an example
 * Configuration: `src/config.py`
 
 ## Adding new models
-* `src/rnnlm.py` gives a minimum example of adding new models with the existing framework
+* `src/modeling/rnnlm.py` gives a minimum example of adding new models with the existing framework. The abstract functions that need overloading are defined in `src/modeling/ftmodel.py`
 
 ## Experiments
 
