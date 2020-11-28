@@ -45,7 +45,7 @@ Training log explained:
 * `ent_z`: entropy of the inference network. If too high (e.g., larger than 50) then the inference model is nearly uniform (i.e. does not converge). Also should not too low (e.g., smaller than 1.0), otherwise the inference model would converge to a constant state (i.e., collapse)
 * `z_sample_max`: the maximum entry to relaxed z. should increase from around 0.5 to around 0.9. Then after we anneal tau it should be 1 (i.e., nearly hard sample). Note that tunning tau to 0.01 is enough for the relaxed sample to be near 1.0
 
-Additionally, the controller also output the gradient of each part of the model (defined in `torch_model_utils.py` function `print_grad`). This is the practice that I think everyone should do to make sure each component of the model would receice meaningful gradients because sometimes one may encounter gradient vanishing for certain part of the model (e.g., the last layer of the inference network). Printing the gradient for all layers would help us to prevent that. 
+Additionally, the controller also output the gradient of each part of the model (defined in `torch_model_utils.py` function `print_grad(·)`). This is the practice that I think everyone should do to make sure each component of the model would receive meaningful gradients because sometimes one may encounter gradient vanishing for certain layers of the model (e.g., the last layer of the inference network). Printing the gradient for all layers would help us to prevent that. 
 
 #### Text Modeling, REINFORCE
 
@@ -67,7 +67,7 @@ nohup python main.py --model_name=latent_temp_crf_ar --dataset=e2e --task=densit
 
 Note that the **simple model formulation in the paper achieves SOTA performance on MSCOCO dataset** (as a side product) and outperforms many previous methods with complicated techniques. 
 
-Yet we do not think unsupervised paraphrasing is easy. But we do think the inductive biased required by unsupervised paraphrasing and the evaluation should be seriously examined. 
+Yet we do not think unsupervised paraphrasing is easy. But we do think the inductive biased required by unsupervised paraphrasing and the evaluation **should be seriously examined**. 
 
 #### Paraphrase Generation, Gumbel-CRF
 ```bash
@@ -82,6 +82,9 @@ nohup python main.py --model_name=latent_temp_crf_ar --grad_estimator=score_func
 
 
 #### Data-to-text, Gumbel-CRF
+
+For reproducing the results, use the following codes. For more practical formulation and modeling for this task, please check [Lisa's posterior regularization paper](https://arxiv.org/abs/2005.04560). A good practice would be combining Gumbel-CRF with posterior regularization. 
+
 ```bash
 nohup python main.py --model_name=latent_temp_crf_ar --dataset=e2e --task=generation --model_version=1.2.0.1 --gpu_id=4 --latent_vocab_size=20 --z_beta=1e-3 --z_overlap_logits=False --use_copy=True --use_src_info=True --num_epoch=80 --validate_start_epoch=0 --validation_criteria=b2 --num_sample_nll=100 --x_lambd_start_epoch=0 --x_lambd_anneal_epoch=10 --batch_size_train=100 --inspect_grad=False --inspect_model=True --write_full_predictions=True --test_validate > ../log/latent_temp_crf_ar.1.2.0.1  2>&1 & tail -f ../log/latent_temp_crf_ar.1.2.0.1
 ```
@@ -96,3 +99,7 @@ Results are produced from `template_manager.py` with some other scripts and the 
 I'm cleaning and speeding it up so currently it is not very well integrated (or not quite runnable). 
 You should be able to observe the produced templates during training, also reproduce the results with a bit of engineering.
 But if you do encounter problems during coding, please contact me. 
+
+### References
+
+See DGM4NLP, [Gradient Estimation](https://github.com/FranxYao/Deep-Generative-Models-for-Natural-Language-Processing#Gradient-Estimation-and-Optimization) section and [Continuous Relaxtion](https://github.com/FranxYao/Deep-Generative-Models-for-Natural-Language-Processing#Continuous-Relexation-of-Discrete-Structures) section for more related works. 
