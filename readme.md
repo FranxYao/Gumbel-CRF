@@ -4,7 +4,7 @@ Yao Fu, Chuanqi Tan, Bin Bi, Mosha Chen, Yansong Feng, Alexander Rush. Latent Te
 
 ## Implementation 
 * Gumbel-FFBS (Algorithm 2 in the paper): `src/modeling/structure/linear_crf.py` function `rsample`.
-* Core model: `src/modeling/latent_temp_crf_ar.py`
+* Core model (Figure 2 in the paper): `src/modeling/latent_temp_crf_ar.py`
 * Training, validation, evaluation: `src/controller.py`
   * This file also serves as a general-purpose framework. New models can be added with minimum engineering. See `src/rnnlm.py` for an example
 * Configuration: `src/config.py`
@@ -63,8 +63,11 @@ Parameters explained:
 nohup python main.py --model_name=latent_temp_crf_ar --dataset=e2e --task=density --model_version=1.5.0.0 --gpu_id=5 --latent_vocab_size=20 --z_beta=1e-3 --z_sample_method=pm --z_overlap_logits=False --use_copy=False --use_src_info=False --num_epoch=60 --validate_start_epoch=0 --num_sample_nll=100 --tau_anneal_epoch=60 --x_lambd_start_epoch=10 --x_lambd_anneal_epoch=2 --batch_size_train=100 --inspect_grad=False --inspect_model=True  > ../log/latent_temp_crf_ar.1.5.0.0  2>&1 & tail -f ../log/latent_temp_crf_ar.1.5.0.0
 ```
 
-### Paraphrase Generation, Table 3 in the paper 
+### Unsupervised Paraphrase Generation, Table 3 in the paper 
 
+Note that the **simple model formulation in the paper achieves SOTA performance on MSCOCO dataset** (as a side product) and outperforms many previous methods with complicated techniques. 
+
+Yet we do not think unsupervised paraphrasing is easy. But we do think the inductive biased required by unsupervised paraphrasing and the evaluation should be seriously examined. 
 
 #### Paraphrase Generation, Gumbel-CRF
 ```bash
