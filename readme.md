@@ -24,6 +24,29 @@ The following experiments are for reproducing Table 1 and Figure 3(B) in the pap
 nohup python main.py --model_name=latent_temp_crf_ar --dataset=e2e --task=density --model_version=1.0.3.1 --gpu_id=6 --latent_vocab_size=20 --z_beta=1e-3 --z_overlap_logits=False --use_copy=False --use_src_info=False --num_epoch=60 --validate_start_epoch=0 --num_sample_nll=100 --x_lambd_start_epoch=10 --x_lambd_anneal_epoch=2 --batch_size_train=100 --inspect_grad=False --inspect_model=True  > ../log/latent_temp_crf_ar.1.0.3.1  2>&1 & tail -f ../log/latent_temp_crf_ar.1.0.3.1
 ```
 
+Parameters explained:
+* gpu_id: change it to any index. I was using a 8-gpu so the range is 0-7
+* latent_vocab_size: number of latent states. In Sam's and Lisa's paper they all use 50 but I find 20 suffice. Maybe bacause I have anonymized the entity. 
+* **z_beta**: beta parameter to controll entropy regularization. The convergence of the latent is quite sensitive to this parameter. If two low then constant posterior (always single state), if too high then uniform posterior. All the two are collapsed cases. I did not use any annealing since I always find posterior collapse can be addressed by a carefully tuned beta. 
+* use_copy: if the decoder copy from the table. Should not be used for density estimation. 
+* use_src_info: if feed table embeddings to decoder. Should not be used for density estimation.
+* num_epoch: convergence end at approximately 60-80. Did not use any learning rate warmup, annealing, or early stop (I tend to not use early stop)
+* num_sample_nll: 100 is enough to get an low-variance estimate.
+* x_lambd_start_epoch: which epoch to start word dropout. Dropout rate start from 1 and ends at 0, decreases linearly
+* x_lambd_anneal_epoch: currently use 2 epochs for word dropout annealing. 
+
+Parameters not explained are not really used (so still need cleaning)
+
+Training log explained:
+* loss: total loss, however the decrease of this loss does NOT necessarily mean the model actually converges. The following values are all important for convergence monitoring
+* p_log_prob: generative model probability. Should decrease
+* p_log_prob_x: word part of generative model, easy to fit
+* p_log_prob_z: latent part of the generative model. This one should also decrease to make the model converge. Note that the generative model can still converge without latent
+* ent_z: entropy of the inference network. If too high (e.g., larger than 50) then the inference model is nearly uniform (i.e. does not converge). Also should not too low (e.g., smaller than 1.0), otherwise the inference model would converge to a constant state (i.e., collapse)
+* z_sample_max: the maximum entry to relaxed z. should increase from around 0.5 to around 0.9. Then after we anneal tau it should be 1 (i.e., nearly hard sample). Note that tunning tau to 0.01 is enough for the relaxed sample to be near 1.0
+
+Additionally, the controller also output the gradient of each part of the model (defined in `torch_model_utils.py` function `print_grad`). This is the practice that I think everyone should do to make sure each component of the model would receice meaningful gradients because sometimes one may encounter gradient vanishing for certain part of the model (e.g., the last layer of the inference network). Printing the gradient for all layers would help us to prevent that. 
+
 #### Text Modeling, REINFORCE
 
 ```bash
