@@ -80,6 +80,11 @@ class LatentTemplateCRFAR(nn.Module):
     return 
 
   def init_state(self, s):
+    """initialize decoder state
+
+    Args:
+      s: size=[batch, embedding_size]
+    """
     batch_size = s.shape[0]
     init_state_h = self.p_dec_init_state_proj_h(s)
     init_state_h = init_state_h.view(
@@ -92,7 +97,12 @@ class LatentTemplateCRFAR(nn.Module):
     return (init_state_h, init_state_c)
 
   def encode_kv(self, keys, vals):
-    """Encode the key-valud table"""
+    """Encode the key-valud table
+    
+    Args:
+      keys: size=[batch, max_mem_len]
+      vals: size=[batch, max_mem_len]
+    """
     kv_mask = keys != self.pad_id 
     keys_emb = self.embeddings(keys)
     vals_emb = self.embeddings(vals)
@@ -190,9 +200,11 @@ class LatentTemplateCRFAR(nn.Module):
     out_dict['z_acc'] = z_acc.item()
     loss += p_log_prob
 
-    # # turn maximization to minimization
+    # turn maximization to minimization
     loss = -loss
 
+    # return gradient statistics for comparing variance of estimators
+    # for reproducing Figure 3(B) in the paper
     if(return_grad):
       self.zero_grad()
       g = torch.autograd.grad(
@@ -212,6 +224,22 @@ class LatentTemplateCRFAR(nn.Module):
   
   def forward_score_func(self, keys, vals, 
     sentences, sent_lens, x_lambd, num_sample, return_grad=False):
+    """Forward pass with score function estimator
+    
+    Args:
+      keys: torch.tensor(torch.long), size=[batch, max_mem_len]
+      vals: torch.tensor(torch.long), size=[batch, max_mem_len]
+      sentences: torch.tensor(torch.long), size=[batch, sent_len]
+      sent_lens: torch.tensor(torch.long), size=[batch]
+      x_lambd: decoder coefficient for the word in, controll how 'autogressive'
+       the model is, anneal from 0 to 1 
+      num_sample: number of sample used for the estimator
+
+    Returns:
+      loss: torch.float, the total loss 
+      out_dict: dict(), output dict  
+      out_dict['inspect']: dict(), training process inspection
+    """
     out_dict = {}
     inspect = {}
     batch_size = sentences.size(0)
@@ -288,7 +316,7 @@ class LatentTemplateCRFAR(nn.Module):
     out_dict['z_acc'] = z_acc.item()
     loss += p_log_prob
 
-    # score function estimator
+    # score function estimator, different versions
     if(self.reward_level == 'seq'):
       # sequence level reward
       p_log_prob_casewise = p_log_prob_casewise.view(batch_size, num_sample)
@@ -330,6 +358,8 @@ class LatentTemplateCRFAR(nn.Module):
     # turn maximization to minimization
     loss = -loss
 
+    # return gradient statistics for comparing variance of estimators
+    # for reproducing Figure 3(B) in the paper
     if(return_grad):
       self.zero_grad()
       g = torch.autograd.grad(
@@ -348,6 +378,7 @@ class LatentTemplateCRFAR(nn.Module):
     return loss, out_dict
 
   def forward_lm(self, sentences, sent_lens):
+    """Only use the decoder as an autoregressive language model"""
     out_dict = {}
 
     # sent_mask = sentences != self.pad_id
@@ -382,6 +413,16 @@ class LatentTemplateCRFAR(nn.Module):
     sentences, sent_lens, num_sample):
     """Marginal probability and ELBO 
     Via importance sampling from the inference network
+
+    Args:
+      keys: torch.tensor(torch.long), size=[batch, max_mem_len]
+      vals: torch.tensor(torch.long), size=[batch, max_mem_len]
+      sentences: torch.tensor(torch.long), size=[batch, sent_len]
+      sent_lens: torch.tensor(torch.long), size=[batch]
+      num_sample: number of sample used for estimation
+
+    Returns:
+      out_dict: type=dict()
     """
     out_dict = {}
     inspect = {}
@@ -464,9 +505,9 @@ class LatentTemplateCRFAR(nn.Module):
       x_lambd: word dropout ratio. 1 = all dropped
 
     Returns:
-      dec_inputs
-      dec_targets_x
-      dec_targets_z
+      dec_inputs: size=[batch, max_len, state_size]
+      dec_targets_x: size=[batch, max_len]
+      dec_targets_z: size=[batch, max_len]
     """
     batch_size = sentences.size(0)
     max_len = sentences.size(1)
@@ -494,8 +535,23 @@ class LatentTemplateCRFAR(nn.Module):
     Li and Rush 20. Posterior Control of Blackbox Generation
 
     Args:
+      z_sample_ids: size=[batch, sent_len]
+      z_sample_emb: size=[batch, sent_len, state_size]
+      sent_lens: size=[batch]
+      mem: size=[batch, max_mem_len]
+      mem_emb: size=[batch, max_mem_len, embedding_size]
+      mem_enc: size=[batch, embedding_size]
+      mem_mask: size=[batch, max_mem_len]
+      sentences: size=[batch, sent_len]
+      x_lambd: type=float, word dropout ratio
 
     Returns:
+      log_prob: type=float
+      log_prob_casewise: size=[batch]
+      log_prob_x: type=float
+      log_prob_z: type=float
+      z_acc: 
+      log_prob_step: size=[batch, max_dec_len]
     """
     inspect = {}
 
@@ -610,7 +666,7 @@ class LatentTemplateCRFAR(nn.Module):
     return out_dict
 
   def decode_infer(self, mem, mem_emb, mem_enc, mem_mask):
-    """Inference
+    """Actual decoding procedure 
 
     Args:
       mem: torch.Tensor(), size=[batch, mem_len]

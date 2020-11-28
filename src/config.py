@@ -86,31 +86,6 @@ class Config:
 
     # logging info during training 
     self.log_info = {
-      'latent_temp_crf': 
-        ['loss', 'neg_ppl', 
-        'tau', 'x_lambd', 
-        'p_log_prob', 'post_log_prob', 
-        # 'switch_g_nll', 'switch_g_acc', 'switch_baseline',
-        'ent_z', 'ent_z_loss', 'z_sample_max', 
-        'z_switching', 'z_switching_loss', 
-        # 'g_reparam_mean', 'g_reparam_std', 'g_reparam_r',
-        # 'g_score_step_mean', 'g_score_step_std', 'g_score_step_r',
-        # 'g_score_seq_mean', 'g_score_seq_std', 'g_score_seq_r'], 
-        ],
-      'latent_temp_crf_rl':
-        ['loss', 'tau', 'x_lambd', 'p_log_prob', 
-        # 'reward_no_base', 'learning_signal_no_base', 
-        # 'reward_seq', 'learning_signal_seq', 
-        # 'reward_step_m', 'learning_signal_step_m', 
-        # 'reward_step_bt', 'learning_signal_step_bt', 
-        # 'reward_step_ut', 'learning_signal_step_ut', 
-        'ent_z', 'ent_z_loss', 'z_switching',
-        'z_switching_loss', 
-        # 'g_seq_mean', 'g_seq_std', 'g_seq_r',
-        # 'g_step_m_mean', 'g_step_m_std', 'g_step_m_r',
-        # 'g_step_bt_mean', 'g_step_bt_std', 'g_step_bt_r',
-        # 'g_step_ut_mean', 'g_step_ut_std', 'g_step_ut_r',
-        ],
       'latent_temp_crf_ar':[
         'loss', 
         'tau', 'x_lambd', 'z_sample_max',
@@ -133,41 +108,19 @@ class Config:
     # scores to be reported during validation 
     self.validation_scores = {
       'rnnlm': ['ppl', 'nll'],
-      'latent_temp_crf': [
-        'b4', 'p_log_prob', 'marginal', 'elbo', 'ent_z', 'elbo_correct', 
-         'log_prob_sent', 'sample_constant', 
-         'z_sample_log_prob', 'prior_log_p'
-         ],
-      'latent_temp_crf_rl': [
-        'b4', 'p_log_prob', 'marginal', 'elbo', 'ent_z', 'elbo_correct', 
-        'log_prob_sent', 'sample_constant', 
-         'z_sample_log_prob', 'prior_log_p'
-         ],
       'latent_temp_crf_ar': [
         'ent_z', 'elbo', 'marginal', 'p_log_prob', 'z_sample_log_prob', 'ppl', 
         'p_log_prob_x', 'p_log_prob_z', 'z_acc', 
         # 'r1', 'r2', 'rl', 'b1', 'b2', 'b3', 'b4',
         # 'self_r1', 'self_r2', 'self_rl', 'self_b1', 'self_b2', 'self_b3', 'self_b4',
         # 'ir1', 'ir2', 'irl', 'ib1', 'ib2', 'ib3', 'ib4',
-        ],
-        
-      'latent_temp_crf_ts': ['neg_ppl'],
-      'autodecoder': ['p_log_prob'],
-      'kv2seq': [],
-      'gaussian_vae': [],
-      'seq2seq': [],
+        ]
       }
 
     # validation criteria for different models 
     self.validation_criteria ={
-      'latent_temp_crf': 'marginal',
-      'latent_temp_crf_rl': 'marginal',
       'latent_temp_crf_ar': 'marginal',
-      'rnnlm': 'nll', 
-      'autodecoder': 'p_log_prob', 
-      'gaussian_vae': 'b4',
-      'kv2seq': 'b2',
-      'seq2seq': 'b4'
+      'rnnlm': 'nll'
       }
 
     # optimization

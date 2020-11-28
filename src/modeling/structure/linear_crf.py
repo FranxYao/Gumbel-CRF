@@ -26,10 +26,6 @@ class LinearChainCRF(nn.Module):
     super(LinearChainCRF, self).__init__()
     self.label_size = config.latent_vocab_size
 
-    # TEST
-    # init_transition = torch.Tensor([[1, 3], 
-    #                                 [2, 4]]).log()
-
     init_transition = torch.randn(
       self.label_size, self.label_size).to(config.device)
 
@@ -42,12 +38,12 @@ class LinearChainCRF(nn.Module):
     """Mix the transition and emission scores
 
     Args:
-      emission_scores: type=torch.Tensor(float), 
+      emission_scores: torch.Tensor(float), 
         size=[batch, max_len, num_class]
 
     Returns:
       scores: size=[batch, len, num_class, num_class]
-      scores = log phi(batch, x_t, y_{t-1}, y_t)
+        scores := log phi(batch, x_t, y_{t-1}, y_t)
     """
     label_size = self.label_size
     batch_size = emission_scores.size(0)
@@ -68,10 +64,11 @@ class LinearChainCRF(nn.Module):
 
     Args:
       emission_scores: size=[batch, max_len, label_size]
+      seq_lens: size=[batch]
 
     Returns:
       alpha: size=[batch, max_len, label_size]
-      Z: size=[batch]
+      log_Z: size=[batch]
     """
     device = emission_scores.device
     all_scores = self.calculate_all_scores(emission_scores)
@@ -93,19 +90,20 @@ class LinearChainCRF(nn.Module):
       alpha[:, word_idx, :] = torch.logsumexp(before_log_sum_exp, 1)
 
     # batch_size x label_size
-    last_alpha = torch.gather(alpha, 1, seq_lens.view(batch_size, 1, 1)\
-      .expand(batch_size, 1, self.label_size) - 1)\
-        .view(batch_size, self.label_size)
-
-    # assuming transition to end has potential 1   
-    # last_alpha.shape=batch_size
-    last_alpha = torch.logsumexp(
-      last_alpha.view(batch_size, self.label_size, 1), 1).view(batch_size)
-    log_Z = last_alpha
+    last_alpha = tmu.batch_gather_last(alpha, seq_lens)
+    log_Z = torch.logsumexp(last_alpha, -1)
     return alpha, log_Z
 
   def backward_score(self, emission_scores, seq_lens):
-    """backward algorithm"""
+    """backward algorithm
+    
+    Args:
+      emission_scores: size=[batch, max_len, label_size]
+      seq_lens: size=[batch]
+
+    Returns:
+      beta: size=[batch, max_len, num_class]
+    """
     device = emission_scores.device
     all_scores = self.calculate_all_scores(emission_scores)
 
@@ -139,9 +137,12 @@ class LinearChainCRF(nn.Module):
     """Evaluate the probability of a sequence
     
     Args:
-      seq: [batch, max_len]
-      emission_scores: [batch, max_len, num_class]
-      seq_lens: [batch]
+      seq: size=[batch, max_len]
+      emission_scores: size=[batch, max_len, num_class]
+      seq_lens: size=[batch]
+
+    Returns:
+      log_prob: size=[batch]
     """
     device = emission_scores.device
     max_len = seq.size(1)
@@ -171,7 +172,18 @@ class LinearChainCRF(nn.Module):
     return log_prob
 
   def marginal(self, seq, emission_scores, seq_lens):
-    """Marginal distribution with conventional forward-backward"""
+    """Marginal distribution with conventional forward-backward
+
+    TODO: an autograd based implementation 
+
+    Args:
+      seq: size=[batch, max_len]
+      emission_scores: size=[batch, max_len, num_class]
+      seq_lens: size=[batch]
+
+    Returns:
+      log_marginal: size=[batch, max_len]
+    """
     alpha, log_Z = self.forward_score(emission_scores, seq_lens)
     beta = self.backward_score(emission_scores, seq_lens)
 
@@ -191,6 +203,15 @@ class LinearChainCRF(nn.Module):
     """Relaxed Argmax from the CRF, Viterbi decoding.
 
     Everything is the same with pmsample except not using the gumbel noise
+
+    Args:
+      emission_scores: type=torch.tensor(float), 
+        size=[batch, max_len, num_class]
+      seq_lens: type=torch.tensor(int), size=[batch]
+
+    Returns:
+      y_hard: size=[batch, max_len]
+      y: size=[batch, max_len, num_class]
     """
     device = emission_scores.device
 
@@ -314,12 +335,6 @@ class LinearChainCRF(nn.Module):
     p = w.exp()
     if(return_switching):
       switching = 0.
-
-    # DEBUG, to show exp(w) gives a valid distribution
-    # p(y_T = k | x) = exp(w)
-    # print(0)
-    # print(torch.exp(w)[0])
-    # print(torch.exp(w)[0].sum())
     
     relaxed_sample_rev[:, 0] = tmu.reparameterize_gumbel(w, tau)
     sample_rev[:, 0] = relaxed_sample_rev[:, 0].argmax(dim=-1)
@@ -338,12 +353,6 @@ class LinearChainCRF(nn.Module):
       if(return_switching):
         switching += (tmu.js_divergence(p, prev_p) * mask[:, i]).sum()
       prev_p = p
-
-      # DEBUG: to show exp(w) gives a valid distribution
-      # p(y_{t - 1} = j | y_t = k, x) = exp(w)
-      # print(i)
-      # print(torch.exp(w)[0])
-      # print(torch.exp(w)[0].sum())
       
       relaxed_sample_rev[:, i] = tmu.reparameterize_gumbel(w, tau)
       sample_rev[:, i] = relaxed_sample_rev[:, i].argmax(dim=-1)
@@ -390,9 +399,6 @@ class LinearChainCRF(nn.Module):
         alpha[:, t, :].view(batch_size, num_class, 1) -\
         alpha[:, t+1, :].view(batch_size, 1, num_class)
       w = log_w.exp()
-      # DEBUG
-      # print(t)
-      # print(w) # expect all 1 tensors
       H[:, t+1, :] = torch.sum(
         w * (H[:, t, :].view(batch_size, num_class, 1) - log_w), dim=1)
     
@@ -400,9 +406,7 @@ class LinearChainCRF(nn.Module):
     H_last = tmu.gather_last(H, seq_lens)
     log_p_T = last_alpha - log_Z.view(batch_size, 1)
     p_T = log_p_T.exp()
-    # DEBUG
-    # print('finally')
-    # print(p_T) # expect tensors sum to 1
+
     H_total = p_T * (H_last - log_p_T)
     H_total = H_total.sum(dim = -1)
     return H_total

@@ -13,8 +13,6 @@ from modeling import torch_model_utils as tmu
 from controller import Controller
 from config import Config
 
-from modeling.latent_temp_crf_model import LatentTemplateCRFModel
-from modeling.latent_temp_crf_rl_model import LatentTemplateCRFRLModel
 from modeling.latent_temp_crf_ar_model import LatentTemplateCRFARModel
 from modeling.rnnlm import RNNLMModel
 
@@ -294,24 +292,10 @@ def main():
     for i in dataset.id2word: fd.write('%d %s\n' % (i, dataset.id2word[i]))
 
   # model 
-  # if(config.model_name == 'kv2seq'): 
-  #   model = KV2Seq(config)
-  if(config.model_name == 'latent_temp_crf'):
-    model = LatentTemplateCRFModel(config)
-  # elif(config.model_name == 'latent_temp_crf_ts'):
-  #   model = LatentTemplateCRFTS(config)
   elif(config.model_name == 'latent_temp_crf_ar'):
     model = LatentTemplateCRFARModel(config)
-  elif(config.model_name == 'latent_temp_crf_rl'):
-    model = LatentTemplateCRFRLModel(config)
-  # elif(config.model_name == 'autodecoder'):
-  #   model = AutoDecoder(config)
   elif(config.model_name == 'rnnlm'):
     model = RNNLMModel(config)
-  # elif(config.model_name == 'gaussian_vae'):
-  #   model = GaussianVAE(config)
-  # elif(config.model_name == 'seq2seq'):
-  #   model = Seq2seq(config)
   else: 
     raise NotImplementedError('model %s not implemented!' % config.model_name)  
   tmu.print_params(model)

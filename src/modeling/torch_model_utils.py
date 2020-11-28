@@ -12,7 +12,7 @@ Tensor operations:
 * `seq_ends`
 * `lens_to_mask`
 * `reverse_sequence`
-* `gather_last`
+* `batch_gather_last`
 * `batch_index_select`
 * `batch_index_put`
 * `batch_repeat`
@@ -204,9 +204,18 @@ def reverse_sequence(seq, seq_lens):
     reversed_seq[i,:seq_lens[i]] = seq[i, ind]
   return reversed_seq
 
-def gather_last(seq, seq_lens):
-  """Gather the last element of a given sequence"""
-  return batch_index_select(seq, seq_lens - 1)
+def batch_gather_last(seq, seq_lens):
+  """Gather the last element of a given sequence
+  
+  Args:
+    seq: size=[batch, max_len, *]
+    seq_lens: size=[batch]
+
+  Returns:
+    last: size=[batch, *]
+  """
+  last = batch_index_select(seq, seq_lens - 1)
+  return last
 
 def batch_index_select(A, ind):
   """Batched index select
