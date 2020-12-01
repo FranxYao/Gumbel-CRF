@@ -1,6 +1,6 @@
 ![title](img/model_github.png)
 
-Yao Fu, Chuanqi Tan, Bin Bi, Mosha Chen, Yansong Feng, Alexander Rush. Latent Template Induction with Gumbel-CRFs. NeurIPS 2020. ([pdf](https://github.com/FranxYao/Gumbel-CRF/blob/main/doc/gumbel_crf_camera_ready.pdf))
+Yao Fu, Chuanqi Tan, Bin Bi, Mosha Chen, Yansong Feng, Alexander Rush. Latent Template Induction with Gumbel-CRFs. NeurIPS 2020. ([pdf](http://arxiv.org/abs/2011.14244))
 
 ## Implementation 
 * Gumbel-FFBS (Algorithm 2 in the paper): `src/modeling/structure/linear_crf.py` function `rsample`.
